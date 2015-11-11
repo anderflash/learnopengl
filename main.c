@@ -49,10 +49,10 @@ void compile_shader(const char* source, GLuint* id, int shader_type){
   free(shaderSource);
 }
 
-void init_shaders(GLuint* shaderProgram){
+void init_shaders(GLuint* shaderProgram, const char* vertexSource, const char* fragmentSource){
   GLuint vertexShader, fragmentShader;
-  compile_shader("vertex.glsl",&vertexShader,GL_VERTEX_SHADER);
-  compile_shader("fragment.glsl",&fragmentShader,GL_FRAGMENT_SHADER);
+  compile_shader(vertexSource,&vertexShader,GL_VERTEX_SHADER);
+  compile_shader(fragmentSource,&fragmentShader,GL_FRAGMENT_SHADER);
 
   *shaderProgram = glCreateProgram();
   glAttachShader(*shaderProgram, vertexShader);
@@ -130,8 +130,9 @@ int main(void)
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
   glBindVertexArray(0);
 
-  GLuint shaderProgram;
-  init_shaders(&shaderProgram);
+  GLuint shaderProgram, shaderProgramYellow;
+  init_shaders(&shaderProgram,"vertex.glsl","fragment.glsl");
+  init_shaders(&shaderProgramYellow,"vertex.glsl","fragment-yellow.glsl");
 
   glViewport(0,0,800,600);
 
@@ -143,11 +144,13 @@ int main(void)
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glUseProgram(shaderProgram);
     glBindVertexArray(VAO[0]);
     glEnableVertexAttribArray(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glDisableVertexAttribArray(0);
 
+    glUseProgram(shaderProgramYellow);
     glBindVertexArray(VAO[1]);
     glEnableVertexAttribArray(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
