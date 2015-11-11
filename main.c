@@ -133,6 +133,8 @@ int main(void)
 
   glfwSetKeyCallback(window, key_callback);
 
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
   while(!glfwWindowShouldClose(window)){
     glfwPollEvents();
 
