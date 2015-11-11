@@ -100,26 +100,35 @@ int main(void)
     return -1;
   }
 
-  GLuint VAO;
-  glGenVertexArrays(1, &VAO);
-  glBindVertexArray(VAO);
-
   GLfloat vertices[] = {
     // First triangle
-     0.5f,  0.5f, 0.0f,  // Top Right
-     0.5f, -0.5f, 0.0f,  // Bottom Right
-    -0.5f,  0.5f, 0.0f,  // Top Left
+    -0.9f, -0.5f, 0.0f,  // Left
+    -0.0f, -0.5f, 0.0f,  // Right
+    -0.45f, 0.5f, 0.0f,  // Top
     // Second triangle
-     0.5f, -0.5f, 0.0f,  // Bottom Right
-    -0.5f, -0.5f, 0.0f,  // Bottom Left
-    -0.5f,  0.5f, 0.0f   // Top Left
+     0.0f, -0.5f, 0.0f,  // Left
+     0.9f, -0.5f, 0.0f,  // Right
+     0.45f, 0.5f, 0.0f   // Top
   };
-  GLuint VBO;
-  glGenBuffers(1, &VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+  GLfloat* first_triangle = vertices;
+  GLfloat* second_triangle = vertices + 9;
 
+  GLuint VAO[2];
+  GLuint VBO[2];
+  glGenVertexArrays(2, VAO);
+  glGenBuffers(2, VBO);
+
+  glBindVertexArray(VAO[0]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) >> 1, first_triangle, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+  glBindVertexArray(0);
+
+  glBindVertexArray(VAO[1]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) >> 1, second_triangle, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+  glBindVertexArray(0);
 
   GLuint shaderProgram;
   init_shaders(&shaderProgram);
@@ -134,13 +143,23 @@ int main(void)
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glBindVertexArray(VAO[0]);
     glEnableVertexAttribArray(0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
     glDisableVertexAttribArray(0);
+
+    glBindVertexArray(VAO[1]);
+    glEnableVertexAttribArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDisableVertexAttribArray(0);
+
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
   }
 
+  glDeleteVertexArrays(2, VAO);
+  glDeleteBuffers(2, VAO);
   glfwTerminate();
 
   return 0;
