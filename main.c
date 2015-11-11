@@ -105,9 +105,14 @@ int main(void)
   glBindVertexArray(VAO);
 
   GLfloat vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
+    // First triangle
+     0.5f,  0.5f, 0.0f,  // Top Right
+     0.5f, -0.5f, 0.0f,  // Bottom Right
+    -0.5f,  0.5f, 0.0f,  // Top Left
+    // Second triangle
+     0.5f, -0.5f, 0.0f,  // Bottom Right
+    -0.5f, -0.5f, 0.0f,  // Bottom Left
+    -0.5f,  0.5f, 0.0f   // Top Left
   };
   GLuint VBO;
   glGenBuffers(1, &VBO);
@@ -130,7 +135,7 @@ int main(void)
     glClear(GL_COLOR_BUFFER_BIT);
 
     glEnableVertexAttribArray(0);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     glDisableVertexAttribArray(0);
 
     glfwSwapBuffers(window);
