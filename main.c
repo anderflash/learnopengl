@@ -68,9 +68,10 @@ int main(void)
 
   glfwSetKeyCallback(window, key_callback);
 
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  GLuint texture1, texture2;
+
+  glGenTextures(1, &texture1);
+  glBindTexture(GL_TEXTURE_2D, texture1);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   GrfArray* image = grf_image_read("container.jpg");
@@ -78,6 +79,17 @@ int main(void)
   glGenerateMipmap(GL_TEXTURE_2D);
   grf_array_free(image);
   image = NULL;
+
+  glGenTextures(1,&texture2);
+  glBindTexture(GL_TEXTURE_2D, texture2);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  image = grf_image_read("awesomeface.png");
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->size[1], image->size[0], 0, GL_RGB, GL_UNSIGNED_BYTE, image->data_uint8);
+  glGenerateMipmap(GL_TEXTURE_2D);
+  grf_array_free(image);
+  image = NULL;
+
   glBindTexture(GL_TEXTURE_2D, 0);
 
   while(!glfwWindowShouldClose(window)){
@@ -92,12 +104,18 @@ int main(void)
     // Be sure to activate the shader
     grf_program_use(shaderProgram);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glUniform1i(glGetUniformLocation(shaderProgram->program_id,"ourTexture1"),0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    glUniform1i(glGetUniformLocation(shaderProgram->program_id,"ourTexture2"),1);
+
     // Now draw the triangle
     glBindVertexArray(VAO);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
-    glBindTexture(GL_TEXTURE_2D, texture);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
