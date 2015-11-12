@@ -72,7 +72,9 @@ int main(void)
     GLfloat timeValue = glfwGetTime();
     GLfloat greenValue = (sin(timeValue)/2)+0.5;
     GLint vertexColorLocation = glGetUniformLocation(shaderProgram->program_id, "ourColor");
+    GLint xOffsetLocation     = glGetUniformLocation(shaderProgram->program_id, "xOffset");
     glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+    glUniform1f(xOffsetLocation, 0.5f);
 
     // Now draw the triangle
     glBindVertexArray(VAO);
