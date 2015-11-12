@@ -11,6 +11,7 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${CMAKE_EXE_LINKER_FLAGS})
 include_directories(${glfw_INCLUDE_DIRS} ${glew_INCLUDE_DIRS})
 aux_source_directory(. SRC_LIST)
 
+
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 target_link_libraries(${PROJECT_NAME} ${glfw_LIBRARIES} ${glew_LIBRARIES} m)
 
