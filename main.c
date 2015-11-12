@@ -1,81 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <grafeo/imgproc.h>
+#include "program.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode){
   if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window,GL_TRUE);
 }
-char* read_file(const char* filename){
-  // Open file
-  long lSize;
-  size_t result;
-  FILE* fp = fopen(filename, "r");
-  if(!fp) return NULL;
-  // Get size
-  fseek(fp,0,SEEK_END);
-  lSize = ftell(fp);
-  rewind(fp);
-  // Alloc and read
-  char* buffer = (char*)malloc(lSize+1);
-  result = fread(buffer, 1, lSize, fp);
-  if(result != lSize){
-    free(buffer);
-    return NULL;
-  }
-  buffer[lSize] = 0;
-  // Return
-  fclose(fp);
-  return buffer;
-}
-
-void compile_shader(const char* source, GLuint* id, int shader_type){
-  GLchar* shaderSource = (GLchar*)read_file(source);
-  *id = glCreateShader(shader_type);
-  glShaderSource(*id, 1, (const GLchar* const*)&shaderSource, NULL);
-  glCompileShader(*id);
-  GLint success;
-  GLchar infoLog[512];
-  glGetShaderiv(*id, GL_COMPILE_STATUS, &success);
-  if(!success)
-  {
-    GLint maxLength = 0;
-    glGetShaderiv(*id, GL_INFO_LOG_LENGTH, &maxLength);
-    glGetShaderInfoLog(*id, maxLength, &maxLength, infoLog);
-    printf("Error compilation shader: %s\n", infoLog);
-    glDeleteShader(*id);
-  }
-  free(shaderSource);
-}
-
-void init_shaders(GLuint* shaderProgram){
-  GLuint vertexShader, fragmentShader;
-  compile_shader("vertex.glsl",&vertexShader,GL_VERTEX_SHADER);
-  compile_shader("fragment.glsl",&fragmentShader,GL_FRAGMENT_SHADER);
-
-  *shaderProgram = glCreateProgram();
-  glAttachShader(*shaderProgram, vertexShader);
-  glAttachShader(*shaderProgram, fragmentShader);
-  glLinkProgram (*shaderProgram);
-
-  GLint success;
-  GLchar infoLog[512];
-  glGetProgramiv(*shaderProgram, GL_LINK_STATUS, &success);
-  if(!success)
-  {
-    glGetProgramInfoLog(*shaderProgram, 512, NULL, infoLog);
-    printf("Error compilation program: %s\n", infoLog);
-  }
-
-  glUseProgram  (*shaderProgram);
-
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
-}
-
-
-
 
 int main(void)
 {
@@ -105,10 +39,10 @@ int main(void)
   glBindVertexArray(VAO);
 
   GLfloat vertices[] = {
-    0.5f,  0.5f, 0.0f,  // Top Right
-    0.5f, -0.5f, 0.0f,  // Bottom Right
-   -0.5f, -0.5f, 0.0f,  // Bottom Left
-   -0.5f,  0.5f, 0.0f   // Top Left
+    0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // Top Right
+    0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // Bottom Right
+   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Left
+   -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // Top Left
   };
   GLuint indices[] = {
     0, 1, 3,
@@ -119,37 +53,65 @@ int main(void)
   glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (GLvoid*)0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (GLvoid*)(6*sizeof(GLfloat)));
 
   GLuint EBO;
   glGenBuffers(1, &EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-  GLuint shaderProgram;
-  init_shaders(&shaderProgram);
+  GrfProgram* shaderProgram = grf_program_new_from_files("vertex.glsl","fragment.glsl");
 
   glViewport(0,0,800,600);
 
   glfwSetKeyCallback(window, key_callback);
 
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  GrfArray* image = grf_image_read("container.jpg");
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->size[1], image->size[0], 0, GL_RGB, GL_UNSIGNED_BYTE, image->data_uint8);
+  glGenerateMipmap(GL_TEXTURE_2D);
+  grf_array_free(image);
+  image = NULL;
+  glBindTexture(GL_TEXTURE_2D, 0);
+
   while(!glfwWindowShouldClose(window)){
+    // Check and call events
     glfwPollEvents();
 
+    // Render
+    // Clear the colorbuffer
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Be sure to activate the shader
+    grf_program_use(shaderProgram);
+
+    // Now draw the triangle
+    glBindVertexArray(VAO);
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
   }
 
   glfwTerminate();
+  grf_program_free(&shaderProgram);
 
   return 0;
 }
