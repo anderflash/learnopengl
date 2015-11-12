@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -124,14 +125,29 @@ int main(void)
   glfwSetKeyCallback(window, key_callback);
 
   while(!glfwWindowShouldClose(window)){
+    // Check and call events
     glfwPollEvents();
 
+    // Render
+    // Clear the colorbuffer
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Be sure to activate the shader
+    glUseProgram(shaderProgram);
+
+    // Update the uniform color
+    GLfloat timeValue = glfwGetTime();
+    GLfloat greenValue = (sin(timeValue)/2)+0.5;
+    GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+    // Now draw the triangle
+    glBindVertexArray(VAO);
     glEnableVertexAttribArray(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
   }
